@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Milan 777 Admin Panel</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+  <style>
+    body { margin: 0; font-family: 'Poppins', sans-serif; background: #111; color: #fff; }
+    h2 { color: #f1c40f; text-align: center; margin: 20px 0; }
+    .login-container, .dashboard { max-width: 400px; margin: 80px auto; background: #1c1c1c; padding: 25px; border-radius: 12px; text-align: center; display: none; }
+    .login-container.active, .dashboard.active { display: block; }
+    input { width: 100%; padding: 12px; margin: 8px 0; background: #000; border: 1px solid #333; border-radius: 6px; color: #fff; }
+    button { width: 100%; padding: 12px; background: #d4af37; color: #000; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+    button:hover { background: #f5d76e; }
+    .tab-menu { display: flex; justify-content: space-around; background: #000; padding: 10px; }
+    .tab-menu button { background: transparent; color: #f1c40f; border: none; cursor: pointer; font-size: 14px; padding: 6px 10px; }
+    .tab-content { display: none; padding: 15px; }
+    .tab-content.active { display: block; }
+    .game-card { background: #1c1c1c; padding: 12px; margin-bottom: 8px; border-radius: 8px; }
+    .game-title { font-size: 16px; font-weight: bold; color: #f5d76e; }
+    .numbers span { background: #333; padding: 4px 8px; border-radius: 4px; margin-right: 4px; }
+    .update-box { margin-top: 5px; }
+    .update-box input { width: 120px; padding: 5px; }
+    .update-box button { width: auto; padding: 6px 10px; margin-left: 5px; }
+    .request-card { background: #1c1c1c; padding: 10px; margin: 8px 0; border-radius: 6px; }
+  </style>
+</head>
+<body>
+
+  <!-- ✅ LOGIN -->
+  <div class="login-container active" id="loginBox">
+    <h2>Admin Login</h2>
+    <input type="password" id="adminPassword" placeholder="Enter Admin Password">
+    <button onclick="loginAdmin()">Login</button>
+  </div>
+
+  <!-- ✅ DASHBOARD -->
+  <div class="dashboard" id="dashboardBox">
+    <h2>🎯 Milan 777 Admin Dashboard</h2>
+
+    <div class="tab-menu">
+      <button onclick="showTab('gamesTab')">🎮 Games</button>
+      <button onclick="showTab('betsTab')">🎫 Bets</button>
+      <button onclick="showTab('depositTab')">💰 Deposit</button>
+      <button onclick="showTab('withdrawTab')">💸 Withdraw</button>
+      <button onclick="showTab('paymentTab')">🏦 Payment</button>
+    </div>
+
+    <!-- ✅ Games Tab -->
+    <div class="tab-content active" id="gamesTab">
+      <h3>Update Game Numbers</h3>
+      <div id="gamesContainer">Loading games...</div>
+    </div>
+
+    <!-- ✅ Bets Tab -->
+    <div class="tab-content" id="betsTab">
+      <h3>Bet Requests</h3>
+      <div id="betRequestsList">Loading...</div>
+    </div>
+
+    <!-- ✅ Deposit Tab -->
+    <div class="tab-content" id="depositTab">
+      <h3>Deposit Requests</h3>
+      <div id="depositRequestsList">Loading...</div>
+    </div>
+
+    <!-- ✅ Withdraw Tab -->
+    <div class="tab-content" id="withdrawTab">
+      <h3>Withdraw Requests</h3>
+      <div id="withdrawRequestsList">Loading...</div>
+    </div>
+
+    <!-- ✅ Payment Settings Tab -->
+    <div class="tab-content" id="paymentTab">
+      <h3>Payment Settings</h3>
+      <input type="text" id="upiID" placeholder="UPI ID">
+      <input type="text" id="bankName" placeholder="Bank Name">
+      <input type="text" id="accHolder" placeholder="Account Holder Name">
+      <input type="text" id="accNumber" placeholder="Account Number">
+      <input type="text" id="ifscCode" placeholder="IFSC Code">
+      <button onclick="savePaymentSettings()">Save Settings</button>
+    </div>
+  </div>
+
+  <!-- ✅ Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+  <script>
+    // ✅ Milan 777 Firebase Config
+    const firebaseConfig = {
+      apiKey: "AIzaSyDKYr9W-G22rybNDtpGTz-qZybLhL22HpM",
+      authDomain: "milan777-71208.firebaseapp.com",
+      databaseURL: "https://milan777-71208-default-rtdb.firebaseio.com",
+      projectId: "milan777-71208",
+      storageBucket: "milan777-71208.firebasestorage.app",
+      messagingSenderId: "767354394784",
+      appId: "1:767354394784:web:e7b65b8e04638d45e091c5",
+      measurementId: "G-NXQ0KBWRVC"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    // ✅ Admin Fixed Password
+    const ADMIN_PASS = "Mafia@7777";
+
+    function loginAdmin(){
+      const pass = document.getElementById("adminPassword").value.trim();
+      if(pass === ADMIN_PASS){
+        document.getElementById("loginBox").classList.remove("active");
+        document.getElementById("dashboardBox").classList.add("active");
+        loadGames();
+        loadBetRequests();
+        loadDepositRequests();
+        loadWithdrawRequests();
+        loadPaymentSettings();
+      } else {
+        alert("❌ Invalid Password!");
+      }
+    }
+
+    function showTab(tabId){
+      document.querySelectorAll(".tab-content").forEach(tab=>tab.classList.remove("active"));
+      document.getElementById(tabId).classList.add("active");
+    }
+
+    const gameNames = ["Ghaziabad","Faridabad","Gali","Disawar","Kalyan Day","Kalyan Night","Mumbai Main","Mumbai Night","Rajdhani Day","Rajdhani Night",
+      "Milan Day","Milan Night","Madhur Day","Madhur Night","Supreme Day","Supreme Night",
+      "Time Bazaar","Sridevi Day","Sridevi Night","Kuber","Diamond","Gold Star","King Star",
+      "Sona Matka","Silver Matka","Starline Day","Starline Night","Jay Mumbai","Kamdhenu",
+      "Super Matka","Lucky Matka","Boss Matka","Raj Express","Turbo Matka","Galaxy Matka",
+      "Winner Matka","Classic Matka","Golden Line","Jackpot Day","Jackpot Night","Top Boss",
+      "Royal Matka","Super Line","Super Boss","Super Starline","Maharani","Bharat Star",
+      "Mega Matka","Champion Day","Champion Night","King Matka","Queen Matka","Shree Matka",
+      "Om Matka","Deluxe Matka","Turbo Starline","Turbo Boss","Express Day","Express Night",
+      "Ultra Matka","Time King","Time Boss","Matka Master","Fast Line","Power Line","Lucky Line",
+      "Prime Matka","Tiger Matka","Shakti Matka","Super Dhamaka","Lucky Boss","Lucky Starline",
+      "Kalpana Matka","Akash Matka","Shiv Matka","Surya Matka","Moon Matka","Venus Matka",
+      "Pluto Matka","Mercury Matka","Saturn Matka","Neptune Matka","Galaxy Star","King Jackpot",
+      "Queen Jackpot","Super Jackpot","Golden Jackpot","Prime Jackpot","Fast Jackpot",
+      "Super Mumbai","Super Rajdhani","Super Kalyan","Super Milan","Super Madhur","Super Supreme",
+      "Super Time","Boss Express","Boss Lucky","Boss King","Boss Queen","Top Line","Prime Line"
+    ];
+
+    function loadGames(){
+      const container = document.getElementById("gamesContainer");
+      container.innerHTML = "";
+      gameNames.forEach(name=>{
+        const div = document.createElement("div");
+        div.classList.add("game-card");
+        div.innerHTML = `
+          <div class="game-title">${name}</div>
+          <div class="numbers" id="numbers-${name}">Loading...</div>
+          <div class="update-box">
+            <input type="text" placeholder="New number" id="input-${name}">
+            <button onclick="saveNumber('${name}')">Save</button>
+          </div>`;
+        container.appendChild(div);
+
+        db.ref("games/"+name).on("value",(snap)=>{
+          const data = snap.val();
+          let html = "";
+          if(data && data.numbers){
+            data.numbers.slice(-3).forEach(num=>{
+              html += `<span>${num}</span>`;
+            });
+          } else {
+            html = "<i>No numbers yet</i>";
+          }
+          document.getElementById("numbers-"+name).innerHTML = html;
+        });
+      });
+    }
+
+    function saveNumber(gameName){
+      const input = document.getElementById("input-"+gameName);
+      const newNum = input.value.trim();
+      if(!newNum){ alert("Enter valid number"); return; }
+      const ref = db.ref("games/"+gameName);
+      ref.once("value",snap=>{
+        let nums = [];
+        if(snap.exists() && snap.val().numbers){ nums = snap.val().numbers; }
+        nums.push(newNum);
+        ref.set({ numbers: nums, lastUpdated: Date.now() }).then(()=>{
+          alert(`✅ ${gameName} updated`);
+          input.value = "";
+        });
+      });
+    }
+
+    function loadBetRequests(){
+      db.ref("bets").on("value",snap=>{
+        const list = document.getElementById("betRequestsList");
+        list.innerHTML = "";
+        snap.forEach(child=>{
+          const bet = child.val();
+          const div = document.createElement("div");
+          div.classList.add("request-card");
+          div.innerHTML = `<b>${bet.game}</b> - ${bet.customer} <br> Number: ${bet.number} | Amount: ₹${bet.amount}`;
+          list.appendChild(div);
+        });
+      });
+    }
+
+    function loadDepositRequests(){
+      db.ref("deposits").on("value",snap=>{
+        const list = document.getElementById("depositRequestsList");
+        list.innerHTML = "";
+        snap.forEach(child=>{
+          const dep = child.val();
+          const div = document.createElement("div");
+          div.classList.add("request-card");
+          div.innerHTML = `${dep.name} deposited ₹${dep.amount} (UTR: ${dep.utr})`;
+          list.appendChild(div);
+        });
+      });
+    }
+
+    function loadWithdrawRequests(){
+      db.ref("withdrawals").on("value",snap=>{
+        const list = document.getElementById("withdrawRequestsList");
+        list.innerHTML = "";
+        snap.forEach(child=>{
+          const wd = child.val();
+          const div = document.createElement("div");
+          div.classList.add("request-card");
+          div.innerHTML = `${wd.name} withdraw ₹${wd.amount} → ${wd.bank} (${wd.account})`;
+          list.appendChild(div);
+        });
+      });
+    }
+
+    function loadPaymentSettings(){
+      db.ref("paymentSettings").once("value",snap=>{
+        if(snap.exists()){
+          const d = snap.val();
+          document.getElementById("upiID").value = d.upi || "";
+          document.getElementById("bankName").value = d.bank || "";
+          document.getElementById("accHolder").value = d.holder || "";
+          document.getElementById("accNumber").value = d.account || "";
+          document.getElementById("ifscCode").value = d.ifsc || "";
+        }
+      });
+    }
+
+    function savePaymentSettings(){
+      db.ref("paymentSettings").set({
+        upi: document.getElementById("upiID").value.trim(),
+        bank: document.getElementById("bankName").value.trim(),
+        holder: document.getElementById("accHolder").value.trim(),
+        account: document.getElementById("accNumber").value.trim(),
+        ifsc: document.getElementById("ifscCode").value.trim()
+      }).then(()=> alert("✅ Payment Settings Updated"));
+    }
+
+  </script>
+</body>
+</html>
