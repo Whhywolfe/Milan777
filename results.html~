@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MILAN 777 - Live Results</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;800&display=swap" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Poppins', sans-serif;
+      background: #0d0d0d;
+      color: #fff;
+    }
+    .site-title {
+      text-align: center;
+      background: linear-gradient(135deg, #d4af37, #a67c00);
+      color: #000;
+      padding: 15px;
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: 2px;
+    }
+    .results-list {
+      padding: 15px;
+      max-width: 800px;
+      margin: auto;
+    }
+    .result-card {
+      background: #1c1c1c;
+      border: 1px solid rgba(255,255,255,0.08);
+      padding: 12px;
+      border-radius: 10px;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: 0.3s;
+    }
+    .result-card:hover {
+      box-shadow: 0 4px 14px rgba(212,175,55,0.15);
+    }
+    .game-name {
+      font-size: 16px;
+      font-weight: bold;
+      color: #f1c40f;
+    }
+    .result-info {
+      text-align: right;
+      font-size: 14px;
+      color: #ccc;
+    }
+    .result-number {
+      font-size: 18px;
+      font-weight: bold;
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="site-title">MILAN 777 - Live Results</div>
+
+  <div class="results-list" id="resultsList"></div>
+
+  <!-- ✅ Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+
+  <script>
+    // ✅ सभी games उसी क्रम में जैसे index.html में
+    const specialGames = ["Ghaziabad","Faridabad","Gali","Disawar"];
+    const otherGames = [
+      "Kalyan Day","Kalyan Night","Mumbai Main","Mumbai Night","Rajdhani Day","Rajdhani Night",
+      "Milan Day","Milan Night","Madhur Day","Madhur Night","Supreme Day","Supreme Night",
+      "Time Bazaar","Sridevi Day","Sridevi Night","Kuber","Diamond","Gold Star","King Star",
+      "Sona Matka","Silver Matka","Starline Day","Starline Night","Jay Mumbai","Kamdhenu",
+      "Super Matka","Lucky Matka","Boss Matka","Raj Express","Turbo Matka","Galaxy Matka",
+      "Winner Matka","Classic Matka","Golden Line","Jackpot Day","Jackpot Night","Top Boss",
+      "Royal Matka","Super Line","Super Boss","Super Starline","Maharani","Bharat Star",
+      "Mega Matka","Champion Day","Champion Night","King Matka","Queen Matka","Shree Matka",
+      "Om Matka","Deluxe Matka","Turbo Starline","Turbo Boss","Express Day","Express Night",
+      "Ultra Matka","Time King","Time Boss","Matka Master","Fast Line","Power Line","Lucky Line",
+      "Prime Matka","Tiger Matka","Shakti Matka","Super Dhamaka","Lucky Boss","Lucky Starline",
+      "Kalpana Matka","Akash Matka","Shiv Matka","Surya Matka","Moon Matka","Venus Matka",
+      "Pluto Matka","Mercury Matka","Saturn Matka","Neptune Matka","Galaxy Star","King Jackpot",
+      "Queen Jackpot","Super Jackpot","Golden Jackpot","Prime Jackpot","Fast Jackpot",
+      "Super Mumbai","Super Rajdhani","Super Kalyan","Super Milan","Super Madhur","Super Supreme",
+      "Super Time","Boss Express","Boss Lucky","Boss King","Boss Queen","Top Line","Prime Line"
+    ];
+    const allGames = [...specialGames, ...otherGames].slice(0,100);
+
+    const resultsList = document.getElementById("resultsList");
+
+    // ✅ पहले से fix order में UI बना दो
+    allGames.forEach(name => {
+      const card = document.createElement("div");
+      card.classList.add("result-card");
+      card.innerHTML = `
+        <div class="game-name">${name}</div>
+        <div class="result-info">
+          <div class="result-number" id="result-${name.replace(/\s+/g,'-')}">No Result Yet</div>
+          <small id="time-${name.replace(/\s+/g,'-')}"></small>
+        </div>
+      `;
+      resultsList.appendChild(card);
+    });
+
+    // ✅ Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyDKYr9W-G22rybNDtpGTz-qZybLhL22HpM",
+      authDomain: "milan777-71208.firebaseapp.com",
+      databaseURL: "https://milan777-71208-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "milan777-71208",
+      storageBucket: "milan777-71208.firebasestorage.app",
+      messagingSenderId: "767354394784",
+      appId: "1:767354394784:web:e7b65b8e04638d45e091c5"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    // ✅ Listen all results
+    firebase.database().ref("results").on("value", snapshot => {
+      const allResults = snapshot.val() || {};
+
+      allGames.forEach(name => {
+        const key = name;
+        const resultKey = `result-${name.replace(/\s+/g,'-')}`;
+        const timeKey = `time-${name.replace(/\s+/g,'-')}`;
+
+        if(allResults[key]){
+          const resNum = allResults[key].resultNumber || "—";
+          const resTime = new Date(allResults[key].timestamp).toLocaleTimeString();
+          document.getElementById(resultKey).innerText = resNum;
+          document.getElementById(timeKey).innerText = resTime;
+        }
+      });
+    });
+  </script>
+
+</body>
+</html>
