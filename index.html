@@ -325,6 +325,34 @@
     alert("❌ Firebase Error: " + err.message);
   });
 };
+    import { onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+// ✅ Admin से आने वाला Result Listen करो
+function listenToResults() {
+  const resultsRef = ref(db, "results");
+  onValue(resultsRef, snapshot => {
+    const allResults = snapshot.val();
+    if (!allResults) return;
+
+    // हर game-card को update करो
+    document.querySelectorAll(".game-card").forEach(card => {
+      const gameName = card.querySelector("h3").innerText;
+      if (allResults[gameName]) {
+        const latestResult = allResults[gameName].resultNumber;
+        const latestTime = new Date(allResults[gameName].timestamp).toLocaleTimeString();
+
+        card.querySelector(".latest-numbers").innerHTML = `
+          <strong>Result:</strong> 
+          <span>${latestResult}</span> 
+          <small>(${latestTime})</small>
+        `;
+      }
+    });
+  });
+}
+
+// ✅ Page load होते ही call करो
+listenToResults();
   </script>
 
 </body>
