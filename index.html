@@ -307,22 +307,24 @@
     const db = getDatabase(app);
 
     window.saveBetToFirebase = (gameName, customerName, gameNumber, betAmount) => {
-      const betsRef = ref(db, "bets");
-      const newBetRef = push(betsRef);
-      set(newBetRef, {
-        game: gameName,
-        customer: customerName,
-        number: gameNumber,
-        amount: betAmount,
-        timestamp: Date.now()
-      })
-      .then(() => {
-        alert("✅ Bet Saved to Firebase!");
-      })
-      .catch(err => {
-        alert("❌ Firebase Error: " + err.message);
-      });
-    };
+  const betsRef = ref(db, "bets");
+  const newBetRef = push(betsRef);
+
+  set(newBetRef, {
+    game: gameName,
+    customer: customerName,
+    number: gameNumber,
+    amount: betAmount,
+    timestamp: Date.now(),
+    status: "pending"  // ✅ अब admin को दिखेगा
+  })
+  .then(() => {
+    alert("✅ Bet request sent! Waiting for admin approval.");
+  })
+  .catch(err => {
+    alert("❌ Firebase Error: " + err.message);
+  });
+};
   </script>
 
 </body>
