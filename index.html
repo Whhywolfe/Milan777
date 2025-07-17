@@ -294,27 +294,24 @@
     };
 
     // ✅ Listen for admin results & update UI
-    function listenToResults() {
-      const resultsRef = ref(db, "results");
-      onValue(resultsRef, snapshot => {
-        const allResults = snapshot.val();
-        if (!allResults) return;
+function listenToResults() {
+  document.querySelectorAll(".game-card").forEach(card => {
+    const gameName = card.querySelector("h3").innerText;
+    const resultRef = ref(db, "games/" + gameName + "/manualResult");
 
-        document.querySelectorAll(".game-card").forEach(card => {
-          const gameName = card.querySelector("h3").innerText;
-          const latestDiv = card.querySelector(".latest-numbers");
+    onValue(resultRef, snapshot => {
+      const latestDiv = card.querySelector(".latest-numbers");
+      if (snapshot.exists()) {
+        const latestResult = snapshot.val();
+        latestDiv.innerHTML = `<strong>Result:</strong> <span>${latestResult}</span>`;
+      } else {
+        latestDiv.innerHTML = `<strong>Result:</strong> <span>Waiting for result...</span>`;
+      }
+    });
+  });
+}
 
-          if (allResults[gameName]) {
-            const latestResult = allResults[gameName].resultNumber;
-            const latestTime = new Date(allResults[gameName].timestamp).toLocaleTimeString();
-
-            latestDiv.innerHTML = `<strong>Result:</strong> <span>${latestResult}</span> <small>(${latestTime})</small>`;
-          }
-        });
-      });
-    }
-
-    listenToResults();
+listenToResults();
   </script>
 
 </body>
